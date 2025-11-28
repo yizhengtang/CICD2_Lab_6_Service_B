@@ -1,12 +1,14 @@
-from fastapi import FastAPI, Depends, HTTPException, status
-from sqlalchemy.orm import Session
-from sqlalchemy import select
-from sqlalchemy.exc import IntegrityError
+from fastapi import FastAPI
+import httpx, os
 
-from app.database import engine, SessionLocal
-from app.models import Base, UserDB
-from app.schemas import UserCreate, UserRead
+app = FastAPI(title="Service B - Proxy API")
+SERVICE_A_BASE_URL = os.getenv("SERVICE_A_BASE_URL", "http://localhost:8001")
 
-app = FastAPI()
-Base.metadata.create_all(bind=engine)
+@app.get("/api/proxy-greet")
+def call_service_a(name: str = "world"):
+    # Build the path-style URL for Service A
+    url = f"{SERVICE_A_BASE_URL}/api/greet/{name}"
+    with httpx.Client() as client:
+        r = client.get(url) # no params= now
+    return {"service_b": True, "service_a_response": r.json()}
 
